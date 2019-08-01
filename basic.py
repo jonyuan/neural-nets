@@ -76,7 +76,38 @@ class Network(object):
     return
 
   def update_network(self, mini_batch, learning_rate):
+    '''Update the network's weights and biases using SGD and backpropogation
+    mini batch is a list of training data in the form (x, y)'''
+    # Cost function has the form 1/n sum(C_x) (average of all training example 
+    # costs)
+    del_b = [np.zeros(b.shape) for b in self.biases]
+    del_w = [np.zeros(w.shape) for w in self.weights]
+    for x, y in mini_batch:
+      # the effect on the gradient from one particular training example
+      marginal_del_b, marinal_del_w = self.backpropogation(x, y)
+      # add this effect from each data point to each layer of the network
+      del_b = [b + marginalb for b, marginalb in zip(del_b, marginal_del_b)]
+      del_w = [w + marginalw for w, marginalw in zip(del_w, marginal_del_w)]
+    # we have updated del_b and del_w for all the training examples in 
+    # the batch. We can now use this to update the weights of the network
+    # Remember, the learning rule is v = v - learning_rate*del_C
+    # del_c is an avg over the batch, so we have v = v - eta/batch_size*del_C
+    self.weights = [w - learning_rate/len(mini_batch)*dw 
+                    for w, dw in zip(self.weights, del_w)]
+    self.biases = [b - learning_rate/len(mini_batch)*db 
+                    for b, db in zip(self.biases, del_b)]
+
+    return
+
+  def backpropagation(self, x, y):
+    '''Returns a tuple (del_b, del_w) representing the gradient of the cost
+    function. del_b and del_w are similar in structure to biases and weights, 
+    each is a layer by layer numpy array'''
     return
 
   def evaluate(self, test_data):
-    return
+    '''Return the number of test inputs correctly guessed by model'''
+    # the network's output is the index of whichever neuron in the final layer
+    # has the highest activation. Hence, argmax()
+    results = [(np.argmax(self.feedforward(x)), y) for (x, y) in test_data]
+    return sum(int(x == y) for (x, y) in results)
