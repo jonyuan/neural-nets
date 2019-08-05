@@ -13,6 +13,9 @@ import numpy as np
 def sigmoid(x):
   return 1.0 / (1.0 + np.exp(-x))
 
+def sigmoid_prime(x):
+  return sigmoid(x) * (1 - sigmoid(x))
+
 class Network(object):
 
   def __init__(self, layer_sizes):
@@ -103,7 +106,45 @@ class Network(object):
     '''Returns a tuple (del_b, del_w) representing the gradient of the cost
     function. del_b and del_w are similar in structure to biases and weights, 
     each is a layer by layer numpy array'''
-    return
+    del_b = [np.zeros(b.shape) for b in self.biases]
+    del_w = [np.zeros(w.shape) for w in self.weights]
+
+    # step 1: feedforward to compute activations a and z
+    activation = x # x, the input, is the first layer of the network
+    activations = [x] # each element is one layer in the network
+    zs = [] # each element is one layer in the network
+    for b, w in zip(self.biases, self.weights):
+      z = np.dot(w, activation) + b
+      activation = sigmoid(z)
+      zs.append(z)
+      activations.append(activation)
+
+    # step 2: now that we have all the activations, we compute the output error
+    # Recall the formula \delta_L = \del_A(C) \hadamard \sigmoid_prime(z_L)
+    delta = self.cost_derivative(activations[-1], y) * sigmoid_prime(zs[-1]) 
+    # Recall that \partialC / \partialb_j = \delta_j and that
+    # \partialC / \partialw_j = a_{l-1} * \delta_l. We proved this through
+    # chain rule
+    del_b[-1] = delta
+    del_w[-1] = np.dot(delta, activations[-2].transpose())
+
+    # step 3: backpropogating the error starting from the output layer
+    for l in range(2, self.num_layers):
+      # l represents the layer # starting from the end
+      # Recall \delta_l = w_{l+1}^T*\delta_{l+1} \hadamard \sigmoid_prime(z_L)
+      z = zs[-l]
+      delta = np.dot(self.weights[-l+1].transpose(), delta) * sigmoid_prime(z)
+      del_b[-l] = delta
+      del_w[-l] = np.dot(delta, activations[-l].transpose())
+
+    # we now have a set of gradients del_b and del_w to perform gradient descent
+    return (del_b, del_w)
+
+  def cost_derivative(self, output_activations, y):
+    """Return the vector of partial derivatives (partial C_x) /
+    (partial a) for each of the outputs in the output activation layer"""
+    return (output_activations-y) # for a quadratic cost function
+
 
   def evaluate(self, test_data):
     '''Return the number of test inputs correctly guessed by model'''
