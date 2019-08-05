@@ -50,13 +50,13 @@ class Network(object):
       a = sigmoid(np.dot(weights, a) + biases)
     return a
 
-  def stochastic_gradient_descent(self, training_data, learning_rate, epochs,
-                                   mini_batch_size, test_data=None):
+  def SGD(self, training_data, epochs,
+                                   mini_batch_size, learning_rate, test_data=None):
     '''Train the network using training_data (list of (x,y)) divided into 
     ``epochs`` number of epochs of size ``mini_batch_size``. If test_data is
     provided then the netework will be partially evaluated at each epoch. 
     The gradient descent is done at ```learning_rate```.'''
-    
+
     training_data = list(training_data)
     n = len(training_data)
 
@@ -69,14 +69,12 @@ class Network(object):
       for mini_batch in mini_batches:
         # the actual gradient descent / updating part
         self.update_network(mini_batch, learning_rate)
-
-      print('Epoch {} out of {} complete'.format(i, epochs))
+      print("Epoch {} out of {} complete".format(i, epochs))
       if test_data:
         test_data = list(test_data)
         n_test = len(test_data)
-        print('Epoch {} Evaluation: {} / {} Success'.format(i, 
+        print("Epoch {} Evaluation: {} / {} Success".format(i, 
               self.evaluate(test_data), n_test))
-    return
 
   def update_network(self, mini_batch, learning_rate):
     '''Update the network's weights and biases using SGD and backpropogation
@@ -87,7 +85,7 @@ class Network(object):
     del_w = [np.zeros(w.shape) for w in self.weights]
     for x, y in mini_batch:
       # the effect on the gradient from one particular training example
-      marginal_del_b, marinal_del_w = self.backpropogation(x, y)
+      marginal_del_b, marginal_del_w = self.backpropogation(x, y)
       # add this effect from each data point to each layer of the network
       del_b = [b + marginalb for b, marginalb in zip(del_b, marginal_del_b)]
       del_w = [w + marginalw for w, marginalw in zip(del_w, marginal_del_w)]
@@ -100,9 +98,7 @@ class Network(object):
     self.biases = [b - learning_rate/len(mini_batch)*db 
                     for b, db in zip(self.biases, del_b)]
 
-    return
-
-  def backpropagation(self, x, y):
+  def backpropogation(self, x, y):
     '''Returns a tuple (del_b, del_w) representing the gradient of the cost
     function. del_b and del_w are similar in structure to biases and weights, 
     each is a layer by layer numpy array'''
@@ -135,7 +131,7 @@ class Network(object):
       z = zs[-l]
       delta = np.dot(self.weights[-l+1].transpose(), delta) * sigmoid_prime(z)
       del_b[-l] = delta
-      del_w[-l] = np.dot(delta, activations[-l].transpose())
+      del_w[-l] = np.dot(delta, activations[-l-1].transpose())
 
     # we now have a set of gradients del_b and del_w to perform gradient descent
     return (del_b, del_w)
